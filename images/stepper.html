@@ -1,0 +1,706 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CS 2420 &middot; Pointer Stepper</title>
+<!--
+  Pointer Stepper -- CT 06, Pointers & Arrays
+
+  Open this file in a browser. Double-click it, or right-click in VS Code ->
+  "Reveal in File Explorer" and double-click there. Nothing to install, no
+  internet needed, no extension: it is one self-contained file.
+
+  WHY NOT IN VS CODE: VS Code has no built-in HTML preview that runs
+  JavaScript. The markdown preview strips scripts and Simple Browser needs a
+  URL. Every student already has a browser.
+
+  The diagrams in images/ are the same ideas held still. These are for the
+  part a still picture cannot show: where the pointer is right now.
+
+  Addresses here are made up and deliberately tidy (0x1000, 0x1004, ...).
+  Real addresses are long, ugly and different every run. The spacing is the
+  only part that matters, and fake addresses make it visible.
+
+  Everything is deliberately plain: no libraries, no build step, no fetch().
+  It has to work from a file:// URL on a Chromebook.
+-->
+<style>
+  :root {
+    --ink: #1a1a2e; --muted: #555; --line: #cbd5e1; --panel: #f8fafc;
+    --blue: #1565c0; --green: #2e7d32; --red: #c62828; --orange: #e65100;
+    --purple: #6a1b9a;
+    /* One number drives the whole page. Every size below is in rem, so the
+       Text size buttons move all of it together and nothing has to be
+       re-tuned for the projector. */
+    --zoom: 2.2;
+  }
+  html { font-size: calc(16px * var(--zoom)); }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif; color: var(--ink);
+    background: #fff; margin: 0; padding: 0 1rem 4rem; line-height: 1.5;
+  }
+  .wrap { max-width: min(1700px, 97vw); margin: 0 auto; }
+  header {
+    background: linear-gradient(135deg,#4527a0 0%,#5e35b1 50%,#5e35b1 100%);
+    color: #fff; border-radius: 12px; padding: 1.5rem 2rem; margin: 1.5rem 0;
+  }
+  header h1 { margin: 0; font-size: 1.5rem; }
+  header p { margin: .5rem 0 0; font-size: .95rem; }
+  nav { margin-bottom: 1.5rem; font-size: .9rem; }
+  nav a {
+    display: inline-block; margin: 0 .5rem .4rem 0; padding: .3rem .7rem;
+    background: #ede7f6; color: var(--purple); border-radius: 999px;
+    text-decoration: none; border: 1px solid #d1c4e9;
+  }
+  nav a:hover, nav a:focus { background: #d1c4e9; }
+  section {
+    border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem 1.5rem;
+    margin-bottom: 1.75rem;
+  }
+  section > h2 { margin: 0 0 .25rem; font-size: 1.15rem; }
+  .sub { margin: 0 0 1rem; color: var(--muted); font-size: .9rem; }
+  .cols { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+  .col { flex: 1 1 20rem; min-width: 18rem; }
+  pre.code {
+    background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: .85rem 0;
+    font-family: Consolas, 'Courier New', monospace; font-size: .85rem;
+    line-height: 1.75; margin: 0; overflow-x: auto;
+  }
+  pre.code .ln {
+    display: block; padding: 0 1rem 0 1.75rem; white-space: pre;
+    border-left: .35rem solid transparent; position: relative;
+  }
+  /* A light fill, a warm outline and a caret in the gutter, so the current
+     line is obvious from the back of the room even on a washed-out image. */
+  pre.code .ln.on {
+    background: #51546b; border-left-color: #f9e2af; color: #fff;
+    box-shadow: inset 0 0 0 .08rem rgba(249, 226, 175, .55);
+  }
+  pre.code .ln.on::before {
+    content: "\25B6"; position: absolute; left: .5rem; color: #f9e2af;
+  }
+  .kw { color: #cba6f7; } .fn { color: #89dceb; } .st { color: #a6e3a1; }
+  .nu { color: #fab387; } .cm { color: #9399b2; font-style: italic; }
+  .ty { color: #f9e2af; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: .75rem 1rem; margin-top: .75rem;
+  }
+  .panel h3 {
+    margin: 0 0 .5rem; font-size: .75rem; letter-spacing: .06em;
+    text-transform: uppercase; color: #37474f;
+  }
+  .vars { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .var {
+    background: #fff; border: 1px solid var(--line); border-radius: 6px;
+    padding: .3rem .6rem; font-family: Consolas, monospace; font-size: .85rem;
+  }
+  .var b { color: var(--blue); font-weight: 600; }
+  .var.changed { border-color: var(--green); background: #e8f5e9; }
+  .var.dead { border-color: var(--red); background: #ffebee; color: #b71c1c; text-decoration: line-through; }
+  .out {
+    font-family: Consolas, monospace; font-size: .85rem; white-space: pre;
+    min-height: 5.5rem; margin: 0; color: var(--ink);
+  }
+  .note { font-size: .88rem; color: var(--muted); min-height: 3.2rem; margin: .6rem 0 0; }
+  .note b { color: var(--ink); }
+  .controls { display: flex; gap: .5rem; align-items: center; margin-top: .9rem; flex-wrap: wrap; }
+  button {
+    font: inherit; font-size: .88rem; padding: .4rem .9rem; border-radius: 6px;
+    border: 1px solid var(--purple); background: var(--purple); color: #fff; cursor: pointer;
+  }
+  button.ghost { background: #fff; color: var(--purple); }
+  button:disabled { opacity: .4; cursor: default; }
+  .count { font-size: .85rem; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  label.opt { font-size: .88rem; color: var(--muted); display: inline-flex; align-items: center; gap: .35rem; }
+  select { font: inherit; font-size: .88rem; padding: .25rem; }
+
+  /* The array strip. Each cell carries its address underneath, because the
+     whole point of pointer arithmetic is that the addresses are 4 apart. */
+  .strip { display: flex; gap: .3rem; flex-wrap: wrap; font-family: Consolas, monospace; font-size: .9rem; }
+  .cell {
+    min-width: 3.4rem; text-align: center; padding: .25rem .35rem; border-radius: 5px;
+    border: 1px solid var(--line); background: #fff; color: #757575;
+  }
+  .cell .addr { display: block; font-size: .62rem; color: #9e9e9e; letter-spacing: -.02em; }
+  .cell.done { color: var(--green); border-color: #a5d6a7; background: #e8f5e9; }
+  .cell.now  { color: #fff; background: var(--purple); border-color: var(--purple); font-weight: bold; }
+  .cell.now .addr { color: #e1d5f5; }
+  .cell.past { color: var(--red); border-style: dashed; border-color: var(--red); background: #ffebee; }
+  .cell.past .addr { color: #e29aa0; }
+  footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+  .sizebar { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-top: .9rem; font-size: .8rem; }
+  .sizebar button {
+    background: rgba(255,255,255,.16); color: #fff; border-color: rgba(255,255,255,.6);
+    font-size: .8rem; padding: .25rem .7rem;
+  }
+  .sizebar button:hover { background: rgba(255,255,255,.3); }
+  .sizebar .val { font-variant-numeric: tabular-nums; opacity: .85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Pointer Stepper</h1>
+  <p>CS 2420 &middot; Module 3 &middot; press <b>Next</b> and watch the pointer move.
+     The pictures in <code>images/</code> are these same ideas held still.</p>
+  <div class="sizebar" id="sizebar">
+    <span>Text size</span>
+    <button data-zoom="out" title="Smaller">A&minus;</button>
+    <button data-zoom="in" title="Bigger">A+</button>
+    <button data-zoom="projector">Projector</button>
+    <button data-zoom="reset">Reset</button>
+    <span class="val" id="zoomval"></span>
+  </div>
+</header>
+
+<nav>
+  <a href="#d1">1. A pointer holds an address</a>
+  <a href="#d2">2. Two ways to walk an array</a>
+  <a href="#d3">3. p + 1 moves by sizeof(int)</a>
+  <a href="#d4">4. Does ++p skip the first element?</a>
+  <a href="#d5">5. ++p vs p++</a>
+</nav>
+
+<section id="d1">
+  <h2>1. A pointer holds an address, and <code>*</code> reads through it</h2>
+  <p class="sub">Two variables, one of which holds the other&rsquo;s location. Watch the last line change
+     <code>value</code> without ever naming it.</p>
+  <div class="cols">
+    <div class="col">
+      <pre class="code" data-code></pre>
+      <div class="panel"><h3>Variables</h3><div class="vars" data-vars></div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h3>Memory</h3><div class="strip" data-strip></div></div>
+      <div class="panel"><h3>Output</h3><p class="out" data-out></p></div>
+    </div>
+  </div>
+  <p class="note" data-note></p>
+  <div class="controls" data-controls></div>
+</section>
+
+<section id="d2">
+  <h2>2. Two ways to walk the same array</h2>
+  <p class="sub">Switch the form and step through both. The output is identical &mdash; that is the point.</p>
+  <div class="controls" style="margin: 0 0 .9rem;">
+    <label class="opt">Walk it with
+      <select data-opt="form">
+        <option value="index">an index &mdash; arr[i]</option>
+        <option value="pointer">a pointer &mdash; *p</option>
+        <option value="offset">an index on a pointer &mdash; *(p + i)</option>
+      </select>
+    </label>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <pre class="code" data-code></pre>
+      <div class="panel"><h3>Variables</h3><div class="vars" data-vars></div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h3>The array</h3><div class="strip" data-strip></div></div>
+      <div class="panel"><h3>Output</h3><p class="out" data-out></p></div>
+    </div>
+  </div>
+  <p class="note" data-note></p>
+  <div class="controls" data-controls></div>
+</section>
+
+<section id="d3">
+  <h2>3. <code>p + 1</code> moves by <code>sizeof(int)</code>, not by 1</h2>
+  <p class="sub">The single most surprising line in the whole activity. The compiler scales the arithmetic for you.</p>
+  <div class="controls" style="margin: 0 0 .9rem;">
+    <label class="opt">Pointer type
+      <select data-opt="type">
+        <option value="int">int* &mdash; 4 bytes per step</option>
+        <option value="char">char* &mdash; 1 byte per step</option>
+        <option value="double">double* &mdash; 8 bytes per step</option>
+      </select>
+    </label>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <pre class="code" data-code></pre>
+      <div class="panel"><h3>Variables</h3><div class="vars" data-vars></div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h3>Where each step lands</h3><div class="strip" data-strip></div></div>
+      <div class="panel"><h3>Output</h3><p class="out" data-out></p></div>
+    </div>
+  </div>
+  <p class="note" data-note></p>
+  <div class="controls" data-controls></div>
+</section>
+
+<section id="d4">
+  <h2>4. Does <code>++p</code> skip the first element?</h2>
+  <p class="sub">No &mdash; and this demo is the proof. Every part of the <code>for</code> header is on its own
+     line so you can see exactly when it runs.</p>
+  <div class="cols">
+    <div class="col">
+      <pre class="code" data-code></pre>
+      <div class="panel"><h3>Variables</h3><div class="vars" data-vars></div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h3>The array</h3><div class="strip" data-strip></div></div>
+      <div class="panel"><h3>Output</h3><p class="out" data-out></p></div>
+    </div>
+  </div>
+  <p class="note" data-note></p>
+  <div class="controls" data-controls></div>
+</section>
+
+<section id="d5">
+  <h2>5. <code>++p</code> vs <code>p++</code> &mdash; same effect on <code>p</code>, different value handed back</h2>
+  <p class="sub">Both leave <code>p</code> in the same place. They differ in what the <em>expression</em> evaluates to.</p>
+  <div class="controls" style="margin: 0 0 .9rem;">
+    <label class="opt">Use
+      <select data-opt="kind">
+        <option value="pre">++p &mdash; pre-increment</option>
+        <option value="post">p++ &mdash; post-increment</option>
+      </select>
+    </label>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <pre class="code" data-code></pre>
+      <div class="panel"><h3>Variables</h3><div class="vars" data-vars></div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h3>The array</h3><div class="strip" data-strip></div></div>
+      <div class="panel"><h3>Output</h3><p class="out" data-out></p></div>
+    </div>
+  </div>
+  <p class="note" data-note></p>
+  <div class="controls" data-controls></div>
+</section>
+
+<footer>
+  <p>Part of <b>Code-Together 06</b>. The still versions of these are in
+     <code>images/</code>, and the Diagrams table in <code>README.md</code> says what each one is for.</p>
+</footer>
+
+</div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * Text size.
+ *
+ * Everything is sized in rem off one custom property, so moving it
+ * scales the page as a whole -- code, panels, buttons and spacing
+ * together. The choice is remembered per machine, because the size
+ * that suits a projector is not the size that suits a laptop.
+ * ------------------------------------------------------------------ */
+(function () {
+  var root = document.documentElement, KEY = "cs2420-stepper-zoom", DEFAULT = 2.2;
+  var out = document.getElementById("zoomval");
+
+  function set(z) {
+    z = Math.max(1, Math.min(4.5, Math.round(z * 10) / 10));
+    root.style.setProperty("--zoom", z);
+    if (out) { out.textContent = Math.round(z / DEFAULT * 100) + "%"; }
+    try { localStorage.setItem(KEY, z); } catch (e) { /* file:// may refuse */ }
+  }
+  function current() {
+    return parseFloat(getComputedStyle(root).getPropertyValue("--zoom")) || DEFAULT;
+  }
+
+  var saved = NaN;
+  try { saved = parseFloat(localStorage.getItem(KEY)); } catch (e) {}
+  set(isNaN(saved) ? DEFAULT : saved);
+
+  document.getElementById("sizebar").addEventListener("click", function (e) {
+    var act = e.target.getAttribute("data-zoom");
+    if (!act) { return; }
+    if (act === "in") { set(current() + 0.2); }
+    if (act === "out") { set(current() - 0.2); }
+    if (act === "projector") { set(3.2); }
+    if (act === "reset") { set(DEFAULT); }
+  });
+})();
+
+/* ------------------------------------------------------------------ *
+ * The harness.
+ *
+ * Every demo is a list of FRAMES computed up front, rather than a
+ * simulation driven forward by the buttons. Frames are why stepping
+ * backwards is free and cannot desynchronise from the code -- Prev is
+ * just an index going down, not an undo that has to be written twice.
+ *
+ * A frame is:  { code, line, vars, out, strip, note }
+ * ------------------------------------------------------------------ */
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function Stepper(section, build) {
+  var i = 0, frames = [], timer = null;
+  var codeEl  = section.querySelector("[data-code]");
+  var varsEl  = section.querySelector("[data-vars]");
+  var outEl   = section.querySelector("[data-out]");
+  var stripEl = section.querySelector("[data-strip]");
+  var noteEl  = section.querySelector("[data-note]");
+  var bar     = section.querySelector("[data-controls]");
+
+  bar.innerHTML =
+    '<button class="ghost" data-act="prev">&larr; Prev</button>' +
+    '<button data-act="next">Next &rarr;</button>' +
+    '<button class="ghost" data-act="play">Play</button>' +
+    '<button class="ghost" data-act="reset">Reset</button>' +
+    '<span class="count" data-count></span>';
+  var countEl = bar.querySelector("[data-count]");
+  var playBtn = bar.querySelector('[data-act="play"]');
+
+  function draw() {
+    var f = frames[i] || {};
+    codeEl.innerHTML = (f.code || []).map(function (line, n) {
+      // A blank spacer line must still occupy a row -- an empty span collapses
+      // to zero height and the grouping the code was written with disappears.
+      return '<span class="ln' + (n === f.line ? " on" : "") + '">' +
+             (line === "" ? "&nbsp;" : line) + "</span>";
+    }).join("");
+
+    varsEl.innerHTML = (f.vars || []).map(function (v) {
+      return '<span class="var' + (v.changed ? " changed" : "") + (v.dead ? " dead" : "") +
+             '"><b>' + esc(v.name) + "</b> = " + esc(v.value) + "</span>";
+    }).join("");
+
+    if (stripEl) {
+      stripEl.innerHTML = (f.strip || []).map(function (c) {
+        return '<span class="cell ' + (c.state || "") + '">' + esc(c.text) +
+               (c.addr ? '<span class="addr">' + esc(c.addr) + "</span>" : "") + "</span>";
+      }).join("");
+    }
+    // Not every demo has a console or a note panel -- a section that omits
+    // one is a layout choice, not a bug, so never assume the element is there.
+    if (outEl)  { outEl.textContent = f.out === "" ? " " : f.out; }
+    if (noteEl) { noteEl.innerHTML = f.note || "&nbsp;"; }
+    countEl.textContent = "step " + (i + 1) + " of " + frames.length;
+    bar.querySelector('[data-act="prev"]').disabled = (i === 0);
+    bar.querySelector('[data-act="next"]').disabled = (i === frames.length - 1);
+  }
+
+  function go(n) {
+    i = Math.max(0, Math.min(frames.length - 1, n));
+    draw();
+    if (timer && i === frames.length - 1) { stop(); }
+  }
+  function stop() { clearInterval(timer); timer = null; playBtn.textContent = "Play"; }
+  function play() {
+    if (timer) { stop(); return; }
+    if (i === frames.length - 1) { i = 0; }
+    playBtn.textContent = "Pause";
+    timer = setInterval(function () { go(i + 1); }, 750);
+  }
+
+  bar.addEventListener("click", function (e) {
+    var act = e.target.getAttribute("data-act");
+    if (!act) { return; }
+    if (act === "next") { stop(); go(i + 1); }
+    if (act === "prev") { stop(); go(i - 1); }
+    if (act === "reset") { stop(); go(0); }
+    if (act === "play") { play(); }
+  });
+
+  // Arrow keys once a demo has focus, so it can be driven from the back of
+  // the room without aiming a mouse at a small button.
+  section.setAttribute("tabindex", "0");
+  section.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight") { stop(); go(i + 1); e.preventDefault(); }
+    if (e.key === "ArrowLeft")  { stop(); go(i - 1); e.preventDefault(); }
+  });
+
+  section.querySelectorAll("[data-opt]").forEach(function (el) {
+    el.addEventListener("change", function () { stop(); rebuild(); });
+  });
+
+  function opts() {
+    var o = {};
+    section.querySelectorAll("[data-opt]").forEach(function (el) {
+      o[el.getAttribute("data-opt")] = (el.type === "checkbox") ? el.checked : el.value;
+    });
+    return o;
+  }
+
+  function rebuild() { frames = build(opts()); i = 0; draw(); }
+  rebuild();
+}
+
+/* Fake but tidy addresses. Real ones are long, ugly and different every run;
+   the only thing that matters here is that the gaps are sizeof(T). */
+var BASE = 0x1000;
+var VALS = [10, 20, 30, 40, 50];
+function hex(n) { return "0x" + n.toString(16).toUpperCase(); }
+function addrOf(k) { return hex(BASE + k * 4); }
+
+/* The array strip, with every cell's address under it. `now` is the element
+   being read this frame, `done` the ones already read. */
+function arrStrip(now, done) {
+  return VALS.map(function (v, k) {
+    var st = "";
+    if (k === now) { st = "now"; }
+    else if (done && k < now) { st = "done"; }
+    else if (done && now === -1) { st = "done"; }
+    return { text: String(v), addr: addrOf(k), state: st };
+  });
+}
+
+/* ------------------------------------------------------------------ *
+ * Demo 1 -- a pointer holds an address
+ * ------------------------------------------------------------------ */
+Stepper(document.getElementById("d1"), function () {
+  var VA = "0x2000";
+  var code = [
+    '<span class="ty">int</span>  value = <span class="nu">42</span>;',
+    '<span class="ty">int</span>* p     = &amp;value;   <span class="cm">// p holds where value lives</span>',
+    '',
+    'std::cout &lt;&lt; p;        <span class="cm">// the address</span>',
+    'std::cout &lt;&lt; *p;       <span class="cm">// the value living there</span>',
+    '',
+    '*p = <span class="nu">99</span>;              <span class="cm">// write THROUGH the pointer</span>',
+    'std::cout &lt;&lt; value;    <span class="cm">// value never appears on the line above</span>'
+  ];
+  function mem(val, hasP, changed) {
+    var cells = [{ text: String(val), addr: VA + "  value", state: changed === "value" ? "now" : "" }];
+    if (hasP) { cells.push({ text: VA, addr: "0x2008  p", state: changed === "p" ? "now" : "" }); }
+    return cells;
+  }
+  var f = [];
+  f.push({ code: code, line: null, vars: [], out: "", strip: [],
+    note: "Nothing exists yet. Watch the <b>Memory</b> panel fill in." });
+  f.push({ code: code, line: 0, out: "", strip: mem(42, false, "value"),
+    vars: [{ name: "value", value: "42", changed: true }],
+    note: "An ordinary <b>int</b>. It lives at some address &mdash; we are calling it " + VA + "." });
+  f.push({ code: code, line: 1, out: "", strip: mem(42, true, "p"),
+    vars: [{ name: "value", value: "42" }, { name: "p", value: VA, changed: true }],
+    note: "<b>p</b> is a variable like any other. What makes it a pointer is that the value it stores " +
+          "is an <i>address</i>. <b>&amp;value</b> means &ldquo;where does value live?&rdquo;" });
+  f.push({ code: code, line: 3, out: VA + "\n", strip: mem(42, true),
+    vars: [{ name: "value", value: "42" }, { name: "p", value: VA }],
+    note: "Printing <b>p</b> prints the address it holds. Nothing is followed." });
+  f.push({ code: code, line: 4, out: VA + "\n42\n", strip: mem(42, true, "value"),
+    vars: [{ name: "value", value: "42" }, { name: "p", value: VA }],
+    note: "Printing <b>*p</b> <i>dereferences</i> it &mdash; go to that address, read what is there. " +
+          "The <b>*</b> is the &ldquo;follow it&rdquo; operator." });
+  f.push({ code: code, line: 6, out: VA + "\n42\n", strip: mem(99, true, "value"),
+    vars: [{ name: "value", value: "99", changed: true }, { name: "p", value: VA }],
+    note: "<b>*p = 99</b> follows the address and writes there. <b>value</b> just changed, and its " +
+          "name is nowhere on that line. This is the whole reason pointers are powerful &mdash; and dangerous." });
+  f.push({ code: code, line: 7, out: VA + "\n42\n99\n", strip: mem(99, true, "value"),
+    vars: [{ name: "value", value: "99" }, { name: "p", value: VA }],
+    note: "Proof: <b>value</b> is 99. One variable was changed by writing through another." });
+  return f;
+});
+
+/* ------------------------------------------------------------------ *
+ * Demo 2 -- two ways to walk the same array
+ * ------------------------------------------------------------------ */
+Stepper(document.getElementById("d2"), function (o) {
+  var form = o.form || "index";
+  var code, label;
+  if (form === "index") {
+    code = [
+      '<span class="ty">int</span> arr[] = { <span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>, <span class="nu">40</span>, <span class="nu">50</span> };',
+      '',
+      '<span class="kw">for</span> (<span class="ty">int</span> i = <span class="nu">0</span>; i &lt; <span class="nu">5</span>; ++i) {',
+      '    std::cout &lt;&lt; arr[i];',
+      '}'
+    ];
+    label = "i";
+  } else if (form === "pointer") {
+    code = [
+      '<span class="ty">int</span> arr[] = { <span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>, <span class="nu">40</span>, <span class="nu">50</span> };',
+      '',
+      '<span class="kw">for</span> (<span class="ty">int</span>* p = arr; p != arr + <span class="nu">5</span>; ++p) {',
+      '    std::cout &lt;&lt; *p;',
+      '}'
+    ];
+    label = "p";
+  } else {
+    code = [
+      '<span class="ty">int</span> arr[] = { <span class="nu">10</span>, <span class="nu">20</span>, <span class="nu">30</span>, <span class="nu">40</span>, <span class="nu">50</span> };',
+      '<span class="ty">int</span>* p = arr;        <span class="cm">// arr decays to a pointer</span>',
+      '',
+      '<span class="kw">for</span> (<span class="ty">int</span> i = <span class="nu">0</span>; i &lt; <span class="nu">5</span>; ++i) {',
+      '    std::cout &lt;&lt; *(p + i);',
+      '}'
+    ];
+    label = "i";
+  }
+  var bodyLine = (form === "offset") ? 4 : 3;
+  var f = [], out = "";
+  f.push({ code: code, line: 0, out: "", strip: arrStrip(-1, false), vars: [],
+    note: "Five ints, laid out back to back. Their addresses go up by <b>4</b> each time, because an " +
+          "<b>int</b> is 4 bytes." });
+  for (var k = 0; k < 5; k++) {
+    var vars;
+    if (form === "pointer") {
+      vars = [{ name: "p", value: addrOf(k), changed: true }, { name: "*p", value: String(VALS[k]) }];
+    } else if (form === "offset") {
+      vars = [{ name: "i", value: String(k), changed: true },
+              { name: "p + i", value: addrOf(k) },
+              { name: "*(p + i)", value: String(VALS[k]) }];
+    } else {
+      vars = [{ name: "i", value: String(k), changed: true }, { name: "arr[i]", value: String(VALS[k]) }];
+    }
+    out += VALS[k] + "\n";
+    f.push({ code: code, line: bodyLine, out: out, strip: arrStrip(k, true), vars: vars,
+      note: "Pass " + (k + 1) + ": reading <b>" + VALS[k] + "</b> from <b>" + addrOf(k) + "</b>." });
+  }
+  f.push({ code: code, line: null, out: out, strip: arrStrip(5, true),
+    vars: [{ name: label, value: (form === "pointer") ? hex(BASE + 20) + "  (one past the end)" : "5" }],
+    note: "Done. <b>All three forms print exactly the same thing</b>, because <b>arr[i]</b> is defined " +
+          "as <b>*(arr + i)</b>. The subscript is not a different mechanism &mdash; it is shorthand for " +
+          "the pointer arithmetic." });
+  return f;
+});
+
+/* ------------------------------------------------------------------ *
+ * Demo 3 -- p + 1 moves by sizeof(T)
+ * ------------------------------------------------------------------ */
+Stepper(document.getElementById("d3"), function (o) {
+  var t = o.type || "int";
+  var size = { int: 4, char: 1, double: 8 }[t];
+  var code = [
+    '<span class="ty">' + t + '</span>* p = data;     <span class="cm">// p points at the first element</span>',
+    '',
+    'std::cout &lt;&lt; p;         <span class="cm">// where p is now</span>',
+    'std::cout &lt;&lt; p + <span class="nu">1</span>;     <span class="cm">// one ELEMENT further on</span>',
+    'std::cout &lt;&lt; p + <span class="nu">2</span>;',
+    'std::cout &lt;&lt; p + <span class="nu">3</span>;'
+  ];
+  function steps(upto) {
+    var cells = [];
+    for (var k = 0; k < 4; k++) {
+      cells.push({ text: "p + " + k, addr: hex(BASE + k * size),
+                   state: k === upto ? "now" : (k < upto ? "done" : "") });
+    }
+    return cells;
+  }
+  var f = [], out = "";
+  f.push({ code: code, line: 0, out: "", strip: steps(-1),
+    vars: [{ name: "sizeof(" + t + ")", value: size + " bytes" }],
+    note: "A <b>" + t + "*</b>. The type is not decoration &mdash; it is what tells the compiler how far " +
+          "one step is." });
+  for (var k = 0; k < 4; k++) {
+    out += hex(BASE + k * size) + "\n";
+    f.push({ code: code, line: 2 + k, out: out, strip: steps(k),
+      vars: [{ name: "sizeof(" + t + ")", value: size + " bytes" },
+             { name: "p + " + k, value: hex(BASE + k * size), changed: true }],
+      note: k === 0
+        ? "Start: <b>" + hex(BASE) + "</b>."
+        : "<b>p + " + k + "</b> is <b>" + hex(BASE + k * size) + "</b> &mdash; that is " + (k * size) +
+          " bytes along, not " + k + ". The compiler multiplied by <b>sizeof(" + t + ") = " + size + "</b> for you." });
+  }
+  f.push({ code: code, line: null, out: out, strip: steps(3),
+    vars: [{ name: "sizeof(" + t + ")", value: size + " bytes" }],
+    note: "Change the type in the dropdown and step through again. <b>The code never changes &mdash; only " +
+          "the type does</b>, and the distances change with it. Pointer arithmetic counts <i>elements</i>, " +
+          "never bytes." });
+  return f;
+});
+
+/* ------------------------------------------------------------------ *
+ * Demo 4 -- does ++p skip the first element?
+ *
+ * The misconception this exists to kill is documented in
+ * pointers_and_arrays.cpp: students read `++p` in the header and assume it
+ * happens before the first pass. Splitting the header across lines and
+ * stepping the parts is the cheapest way to show it does not.
+ * ------------------------------------------------------------------ */
+Stepper(document.getElementById("d4"), function () {
+  var code = [
+    '<span class="kw">for</span> (<span class="ty">int</span>* p = arr;     <span class="cm">// 1. init  -- once, before anything</span>',
+    '     p != arr + <span class="nu">5</span>;    <span class="cm">// 2. test  -- before every pass</span>',
+    '     ++p)             <span class="cm">// 4. update -- AFTER the body</span>',
+    '{',
+    '    std::cout &lt;&lt; *p; <span class="cm">// 3. body</span>',
+    '}'
+  ];
+  var f = [], out = "";
+  f.push({ code: code, line: 0, out: "", strip: arrStrip(0, false),
+    vars: [{ name: "p", value: addrOf(0), changed: true }, { name: "*p", value: "10" }],
+    note: "<b>Init runs once.</b> <b>p</b> starts at <b>arr</b>, which is the address of the <i>first</i> " +
+          "element. Nothing has been incremented." });
+  for (var k = 0; k < 5; k++) {
+    f.push({ code: code, line: 1, out: out, strip: arrStrip(k, true),
+      vars: [{ name: "p", value: addrOf(k) }, { name: "arr + 5", value: hex(BASE + 20) }],
+      note: "<b>Test.</b> Is <b>" + addrOf(k) + "</b> different from <b>" + hex(BASE + 20) +
+            "</b>? Yes &mdash; so the body runs." });
+    out += VALS[k] + "\n";
+    f.push({ code: code, line: 4, out: out, strip: arrStrip(k, true),
+      vars: [{ name: "p", value: addrOf(k) }, { name: "*p", value: String(VALS[k]), changed: true }],
+      note: "<b>Body.</b> Prints <b>" + VALS[k] + "</b>." +
+            (k === 0 ? " <b>Notice this is element 0.</b> The first pass printed the first element, " +
+                       "even though the header says <b>++p</b>." : "") });
+    f.push({ code: code, line: 2, out: out, strip: arrStrip(k + 1 < 5 ? k + 1 : 5, true),
+      vars: [{ name: "p", value: k + 1 < 5 ? addrOf(k + 1) : hex(BASE + 20), changed: true }],
+      note: "<b>Update.</b> Only now does <b>++p</b> run &mdash; after the body, not before it. " +
+            (k === 0 ? "That is the answer: <b>++p does not skip anything</b>." : "") });
+  }
+  f.push({ code: code, line: 1, out: out, strip: arrStrip(5, true),
+    vars: [{ name: "p", value: hex(BASE + 20), dead: true }, { name: "arr + 5", value: hex(BASE + 20) }],
+    note: "<b>Test fails.</b> <b>p</b> now equals <b>arr + 5</b>, one past the last element. " +
+          "That address is legal to <i>compare</i> against but never legal to dereference &mdash; " +
+          "it is a finish line, not an element." });
+  f.push({ code: code, line: null, out: out, strip: arrStrip(-1, true), vars: [],
+    note: "All five printed, in order, starting from the first. The order is always " +
+          "<b>init &rarr; test &rarr; body &rarr; update &rarr; test &rarr; body &rarr; &hellip;</b>" });
+  return f;
+});
+
+/* ------------------------------------------------------------------ *
+ * Demo 5 -- ++p vs p++
+ * ------------------------------------------------------------------ */
+Stepper(document.getElementById("d5"), function (o) {
+  var pre = (o.kind || "pre") === "pre";
+  var code = [
+    '<span class="ty">int</span>* p = arr;        <span class="cm">// p -&gt; arr[0]</span>',
+    '',
+    '<span class="ty">int</span>* q = ' + (pre ? '++p;' : 'p++;') + '       <span class="cm">// ' +
+      (pre ? 'increment first, then hand back the NEW p' : 'hand back a COPY of the OLD p, then increment') +
+      '</span>'
+  ];
+  var f = [];
+  f.push({ code: code, line: 0, strip: arrStrip(0, false), out: "",
+    vars: [{ name: "p", value: addrOf(0), changed: true }],
+    note: "Both forms start the same way: <b>p</b> at <b>" + addrOf(0) + "</b>." });
+  if (pre) {
+    f.push({ code: code, line: 2, strip: arrStrip(1, false), out: "",
+      vars: [{ name: "p", value: addrOf(1), changed: true }],
+      note: "<b>Step one of ++p:</b> increment <b>p</b> straight away. It now points at <b>" +
+            addrOf(1) + "</b>." });
+    f.push({ code: code, line: 2, strip: arrStrip(1, false), out: "",
+      vars: [{ name: "p", value: addrOf(1) }, { name: "q", value: addrOf(1), changed: true }],
+      note: "<b>Step two:</b> hand back <b>p</b> itself. <b>q</b> gets the <i>new</i> value. " +
+            "No copy was needed &mdash; nothing had to be saved first." });
+  } else {
+    f.push({ code: code, line: 2, strip: arrStrip(0, false), out: "",
+      vars: [{ name: "p", value: addrOf(0) }, { name: "(temp copy)", value: addrOf(0), changed: true }],
+      note: "<b>Step one of p++:</b> save a copy of the <i>old</i> <b>p</b> off to one side. " +
+            "This copy is the extra work." });
+    f.push({ code: code, line: 2, strip: arrStrip(1, false), out: "",
+      vars: [{ name: "p", value: addrOf(1), changed: true }, { name: "(temp copy)", value: addrOf(0) }],
+      note: "<b>Step two:</b> now increment <b>p</b>." });
+    f.push({ code: code, line: 2, strip: arrStrip(1, false), out: "",
+      vars: [{ name: "p", value: addrOf(1) }, { name: "q", value: addrOf(0), changed: true }],
+      note: "<b>Step three:</b> hand back the saved copy. <b>q</b> gets the <i>old</i> value, " +
+            "<b>" + addrOf(0) + "</b>, even though <b>p</b> has moved on." });
+  }
+  f.push({ code: code, line: null, strip: arrStrip(1, false), out: "",
+    vars: [{ name: "p", value: addrOf(1) }, { name: "q", value: pre ? addrOf(1) : addrOf(0) }],
+    note: pre
+      ? "<b>p</b> and <b>q</b> agree. Two steps, no temporary. Now switch the dropdown to <b>p++</b> " +
+        "and count the steps."
+      : "<b>p</b> and <b>q</b> disagree &mdash; and it took <b>three</b> steps and a temporary to get here. " +
+        "That temporary is why this course writes <b>++p</b> when the returned value is thrown away, " +
+        "as it is in every <b>for</b> header."});
+  return f;
+});
+</script>
+</body>
+</html>

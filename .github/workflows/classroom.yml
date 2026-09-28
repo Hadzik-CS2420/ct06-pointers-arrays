@@ -1,6 +1,15 @@
 name: Autograding Tests
+
+# workflow_dispatch only -- deliberately NOT on push.
+#
+# GitHub rounds every Actions job up to a full minute, and these finish in
+# seconds. On push, a student debugging in a flurry burns a minute per attempt.
+# Students get their score instantly and for free from
+# `python3 tests/scorecard.py`; this workflow is the instructor's side, swept
+# across every student repo at grading time with
+# `python scripts/collect_autograde.py ct06-pointers-arrays`.
 on:
-  - push
+  - workflow_dispatch
   - repository_dispatch
 permissions:
   checks: write
@@ -22,11 +31,11 @@ jobs:
         cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
         cmake --build build --config Release
 
-    - name: Build Check (2 points)
+    - name: Build Check (0 points)
       id: build
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Build Check (2 points)
+        test-name: Build Check (0 points)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -35,15 +44,15 @@ jobs:
             echo "Build failed" && exit 1
           fi
         timeout: 10
-        max-score: 2
+        max-score: 0
 
     # ==================== Pointers and Arrays Tests ====================
 
-    - name: Pointer Points to First Element (3 points)
+    - name: Pointer Points to First Element (2 points)
       id: ptr-first
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Pointer Points to First Element (3 points)
+        test-name: Pointer Points to First Element (2 points)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -52,7 +61,7 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 3
+        max-score: 2
 
     - name: Address of Element 0 (1 point)
       id: addr-elem0
@@ -84,11 +93,11 @@ jobs:
         timeout: 10
         max-score: 1
 
-    - name: Bytes Between Elements (3 points)
+    - name: Bytes Between Elements (2 points)
       id: bytes-between
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Bytes Between Elements (3 points)
+        test-name: Bytes Between Elements (2 points)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -97,13 +106,13 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 3
+        max-score: 2
 
-    - name: Dereferenced Value (3 points)
+    - name: Dereferenced Value (2 points)
       id: deref-value
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Dereferenced Value (3 points)
+        test-name: Dereferenced Value (2 points)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -112,7 +121,7 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 3
+        max-score: 2
 
     - name: Modify Through Pointer (3 points)
       id: modify-ptr
@@ -159,11 +168,11 @@ jobs:
         timeout: 10
         max-score: 2
 
-    - name: Walking with Pointer Loop (4 points)
+    - name: Walking with Pointer Loop (3 points)
       id: walk-ptr
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Walking with Pointer Loop (4 points)
+        test-name: Walking with Pointer Loop (3 points)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -172,15 +181,15 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 4
+        max-score: 3
 
     # ==================== Pointers as Arrays Tests ====================
 
-    - name: Bracket Index ptr[0] (2 points)
+    - name: Bracket Index ptr[0] (1 point)
       id: bracket-ptr0
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Bracket Index ptr[0] (2 points)
+        test-name: Bracket Index ptr[0] (1 point)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -189,13 +198,13 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 2
+        max-score: 1
 
-    - name: Bracket Index ptr[2] (2 points)
+    - name: Bracket Index ptr[2] (1 point)
       id: bracket-ptr2
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Bracket Index ptr[2] (2 points)
+        test-name: Bracket Index ptr[2] (1 point)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -204,7 +213,7 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 2
+        max-score: 1
 
     - name: Bracket Index ptr[4] (1 point)
       id: bracket-ptr4
@@ -238,11 +247,11 @@ jobs:
 
     # ==================== Arrays as Pointers Tests ====================
 
-    - name: Array Decay Calls printArray (3 points)
+    - name: Array Decay Calls printArray (2 points)
       id: array-decay
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Array Decay Calls printArray (3 points)
+        test-name: Array Decay Calls printArray (2 points)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -251,7 +260,7 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 3
+        max-score: 2
 
     - name: Dereference Array Name (2 points)
       id: deref-array
@@ -268,11 +277,11 @@ jobs:
         timeout: 10
         max-score: 2
 
-    - name: Array Name + Offset 2 (2 points)
+    - name: Array Name + Offset 2 (1 point)
       id: array-offset2
       uses: classroom-resources/autograding-command-grader@v1
       with:
-        test-name: Array Name + Offset 2 (2 points)
+        test-name: Array Name + Offset 2 (1 point)
         setup-command: ''
         command: |
           if [ -f build/run_tests ]; then
@@ -281,7 +290,7 @@ jobs:
             exit 1
           fi
         timeout: 10
-        max-score: 2
+        max-score: 1
 
     - name: Array Name + Offset 4 (1 point)
       id: array-offset4

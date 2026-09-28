@@ -1,8 +1,15 @@
-# CT5 – Pointers & Arrays Basics
+# Code-Together 06: Pointers & Arrays
 
 ## Overview
 
 An in-class code-together activity introducing pointers, arrays, and the relationship between them. Students complete TODO items in three source files while the instructor walks through concepts using discussion comments and diagrams.
+
+> ▶️ **Watch it run, one step at a time.** Your repo has
+> `images/stepper.html` — **double-click it** to open it in your browser and
+> press **Next**. It walks a pointer across an array and shows every address as it changes, including the one question everybody asks: whether `++p` skips the first element. Nothing to install, and it works offline.
+>
+> The still pictures of the same ideas are in `images/`, and the Diagrams
+> table below says what each one is for.
 
 ## Files
 
@@ -47,15 +54,19 @@ Seven SVG/PNG diagrams support the activity. Source SVGs are in `images/svg/`, P
 | `for_loop_order` | `pointers_and_arrays.cpp` | `for` loop execution order with `++p` — addresses the misconception that `++p` runs before the first iteration |
 | `pointer_loop_increment_asm` | `pointers_and_arrays.cpp` | Pointer `for` loop with assembly output — why `++p` is preferred, and why it matters for iterators |
 
-## Grading (40 points)
+## Grading (30 points)
 
 | Category | Points | What is tested |
 |---|---|---|
-| Build | 2 | Project compiles without errors |
-| `pointers_and_arrays.cpp` | 22 | Declaring pointers, addresses, dereferencing, pointer arithmetic, pointer walking loop |
-| `pointers_as_arrays.cpp` | 8 | Bracket indexing on pointers, looping with `ptr[i]` |
-| `arrays_as_pointers.cpp` | 8 | Array decay, pointer arithmetic on array name |
-| **Total** | **40** | |
+| `pointers_and_arrays.cpp` — pointers & addresses | 6 | Pointing at an array, addresses of elements, bytes between them |
+| `pointers_and_arrays.cpp` — dereferencing | 5 | Reading and writing through a pointer |
+| `pointers_and_arrays.cpp` — pointer arithmetic | 7 | `p + n`, and walking the array with a pointer |
+| `pointers_as_arrays.cpp` | 6 | Bracket indexing on pointers, looping with `ptr[i]` |
+| `arrays_as_pointers.cpp` | 6 | Array decay, pointer arithmetic on the array name |
+| **Total** | **30** | |
+
+These are the same numbers `tests/scorecard.py` prints and the same ones
+`.github/workflows/classroom.yml` awards. If you change one, change all three.
 
 ## Comment Conventions
 
